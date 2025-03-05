@@ -120,6 +120,7 @@ public class CircuitBreakerTelemetryTest extends Arquillian {
     @Test
     public void testCircuitBreakerMetric() throws Exception {
         TelemetryMetricGetter m = new TelemetryMetricGetter(CircuitBreakerMetricBean.class, "doWork");
+        m.baselineMetrics();
 
         // First failure, circuit remains closed
         expectTestException(() -> cbBean.doWork(Result.FAIL));
