@@ -44,7 +44,7 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.testng.annotations.BeforeTest;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import jakarta.inject.Inject;
@@ -75,7 +75,7 @@ public class CircuitBreakerMetricTest extends Arquillian {
     @Inject
     private CircuitBreakerMetricBean cbBean;
 
-    @BeforeTest
+    @BeforeMethod
     public void closeTheCircuit() throws Exception {
 
         // Condition is needed because BeforeTest runs on both client and server
