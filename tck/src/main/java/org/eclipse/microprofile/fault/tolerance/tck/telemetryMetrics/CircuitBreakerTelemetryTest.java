@@ -53,7 +53,7 @@ import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.testng.annotations.BeforeTest;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import io.opentelemetry.sdk.autoconfigure.spi.AutoConfigurationCustomizerProvider;
@@ -90,7 +90,7 @@ public class CircuitBreakerTelemetryTest extends Arquillian {
     @Inject
     private CircuitBreakerMetricBean cbBean;
 
-    @BeforeTest
+    @BeforeMethod
     public void closeTheCircuit() throws Exception {
 
         // Condition is needed because BeforeTest runs on both client and server
@@ -117,9 +117,10 @@ public class CircuitBreakerTelemetryTest extends Arquillian {
         }
     }
 
-    @Test(groups = "main")
+    @Test
     public void testCircuitBreakerMetric() throws Exception {
         TelemetryMetricGetter m = new TelemetryMetricGetter(CircuitBreakerMetricBean.class, "doWork");
+        m.baselineMetrics();
 
         // First failure, circuit remains closed
         expectTestException(() -> cbBean.doWork(Result.FAIL));
@@ -181,7 +182,7 @@ public class CircuitBreakerTelemetryTest extends Arquillian {
                 is(5L));
     }
 
-    @Test(dependsOnGroups = "main")
+    @Test(dependsOnMethods = "testCircuitBreakerMetric")
     public void testMetricUnits() throws InterruptedException, ExecutionException {
         InMemoryMetricReader reader = InMemoryMetricReader.current();
 

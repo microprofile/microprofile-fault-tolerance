@@ -19,22 +19,24 @@
  *******************************************************************************/
 package org.eclipse.microprofile.fault.tolerance.tck.telemetryMetrics.util;
 
-import io.opentelemetry.sdk.autoconfigure.spi.AutoConfigurationCustomizer;
-import io.opentelemetry.sdk.autoconfigure.spi.AutoConfigurationCustomizerProvider;
-import io.opentelemetry.sdk.autoconfigure.spi.ConfigProperties;
-import io.opentelemetry.sdk.metrics.SdkMeterProviderBuilder;
+import static org.testng.Assert.assertEquals;
 
-public class PullExporterAutoConfigurationCustomizerProvider implements AutoConfigurationCustomizerProvider {
+import java.util.Arrays;
+import java.util.List;
 
-    public void customize(AutoConfigurationCustomizer autoConfiguration) {
-        autoConfiguration.addMeterProviderCustomizer(this::registerMeterProvider);
+import org.testng.annotations.Test;
+
+public class TelemetryHistogramMetricTest {
+
+    @Test
+    public void testFindBucket() {
+        List<Double> boundaries = Arrays.asList(0.5, 1.0, 4.0, 5.0);
+        assertEquals(0, TelemetryHistogramMetric.findBucket(boundaries, 0.0));
+        assertEquals(0, TelemetryHistogramMetric.findBucket(boundaries, 0.5)); // Upper bounds are inclusive
+        assertEquals(1, TelemetryHistogramMetric.findBucket(boundaries, 0.6));
+        assertEquals(1, TelemetryHistogramMetric.findBucket(boundaries, 1.0));
+        assertEquals(3, TelemetryHistogramMetric.findBucket(boundaries, 4.5));
+        assertEquals(4, TelemetryHistogramMetric.findBucket(boundaries, 5.5)); // Anything after the last boundary is in
+                                                                               // the last bucket
     }
-
-    private SdkMeterProviderBuilder registerMeterProvider(SdkMeterProviderBuilder builder,
-            ConfigProperties properties) {
-        InMemoryMetricReader exporter = InMemoryMetricReader.current();
-        builder.registerMetricReader(exporter);
-        return builder;
-    }
-
 }
