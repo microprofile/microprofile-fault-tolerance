@@ -39,11 +39,92 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <!--
+                Pulled transitively by CDI 3.0 as 2.0.0, which carries no module name. 2.1.0 is the
+                first release with a module descriptor (still Java 8 bytecode) and is needed to
+                resolve `requires jakarta.interceptor` in module-info.java.
+            -->
+            <groupId>jakarta.interceptor</groupId>
+            <artifactId>jakarta.interceptor-api</artifactId>
+            <version>2.1.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.annotation.versioning</artifactId>
             <version>1.1.0</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
+
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <!--
+                        The module descriptor is compiled in a dedicated execution, patched onto the
+                        already compiled classes. This keeps the main compilation unchanged (class path)
+                        and avoids requiring the OSGi/bnd annotation jars referenced by package-info.java,
+                        which are compile-time only and ship no module descriptor.
+                    -->
+                    <execution>
+                        <id>compile-module-info</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <!-- module-info requires at least Java 9; the other classes stay on the project baseline. -->
+                            <release>9</release>
+                            <compileSourceRoots>
+                                <compileSourceRoot>${project.basedir}/src/main/module-info</compileSourceRoot>
+                            </compileSourceRoots>
+                            <compilerArgs>
+                                <arg>--patch-module</arg>
+                                <arg>org.eclipse.microprofile.faulttolerance=${project.build.outputDirectory}</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <!--
+                        Register the descriptor source root only once compilation is over, so that the
+                        sources jar ships module-info.java while the default compilation keeps ignoring it.
+                    -->
+                    <execution>
+                        <id>add-module-info-source</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.basedir}/src/main/module-info</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <!--
+                        Keep javadoc in class path mode: a module-info.java at the root of a source path would switch
+                        it to module mode, so only the regular sources are documented.
+                    -->
+                    <legacyMode>true</legacyMode>
+                    <sourcepath>${project.build.sourceDirectory}</sourcepath>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
